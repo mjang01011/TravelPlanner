@@ -13,7 +13,7 @@ from dotenv import load_dotenv, find_dotenv
 # Load API Keys
 load_dotenv(find_dotenv(), override=True)
 
-open_ai_key =os.environ.get('OPENAI_API_KEY')
+open_ai_key = os.environ.get("OPENAI_API_KEY")
 google_gemini_key = os.environ.get("GOOGLE_GEMINI_API_KEY")
 google_maps_key = os.environ.get("GOOGLE_MAPS_API_KEY")
 
@@ -25,20 +25,22 @@ from langchain.prompts.chat import (
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 
+
 # Define Validation class for pydantic Field.
 # This allows you to specify validation rules for fields and set default values
 # Pydantic forces the output model type (ex. float to int), but if its not parsable, it throws validation error
 class Validation(BaseModel):
-  plan_is_valid: str = Field(
-      description="This field is 'True' if the plan is feasible, 'False' otherwise"
-  )
-  updated_request: str = Field(description="Your update to the plan")
+    plan_is_valid: str = Field(
+        description="This field is 'True' if the plan is feasible, 'False' otherwise"
+    )
+    updated_request: str = Field(description="Your update to the plan")
+
 
 # Define ValidationTemplate
 class ValidationTemplate(object):
-  def __init__(self):
-    # System template gives context and sets the stage for LLM
-    self.system_template = """
+    def __init__(self):
+        # System template gives context and sets the stage for LLM
+        self.system_template = """
       You are a travel planner agent who helps users make detailed and accurate travel plans.
 
       The user's request will be denoted by four hashtags. Determine if the user's
@@ -61,26 +63,27 @@ class ValidationTemplate(object):
       {format_instructions}
     """
 
-    # Human template is inputted as a query variable
-    self.human_template = """
+        # Human template is inputted as a query variable
+        self.human_template = """
       ####{query}####
     """
 
-    self.parser = PydanticOutputParser(pydantic_object=Validation)
+        self.parser = PydanticOutputParser(pydantic_object=Validation)
 
-    self.system_message_prompt = SystemMessagePromptTemplate.from_template(
-        self.system_template,
-        partial_variables={
-            "format_instructions": self.parser.get_format_instructions()
-        },
-    )
-    self.human_message_prompt = HumanMessagePromptTemplate.from_template(
-        self.human_template, input_variables=["query"]
-    )
+        self.system_message_prompt = SystemMessagePromptTemplate.from_template(
+            self.system_template,
+            partial_variables={
+                "format_instructions": self.parser.get_format_instructions()
+            },
+        )
+        self.human_message_prompt = HumanMessagePromptTemplate.from_template(
+            self.human_template, input_variables=["query"]
+        )
 
-    self.chat_prompt = ChatPromptTemplate.from_messages(
-        [self.system_message_prompt, self.human_message_prompt]
-    )
+        self.chat_prompt = ChatPromptTemplate.from_messages(
+            [self.system_message_prompt, self.human_message_prompt]
+        )
+
 
 # Define ItineraryTemplate
 class ItineraryTemplate(object):
@@ -118,12 +121,14 @@ class ItineraryTemplate(object):
             [self.system_message_prompt, self.human_message_prompt]
         )
 
+
 # Define Trip class for pydantic Field.
 class Trip(BaseModel):
     start: str = Field(description="start location of trip")
     end: str = Field(description="end location of trip")
     stops: list[str] = Field(description="list of stops")
     transit: str = Field(description="mode of transportation")
+
 
 # Define MappingTemplate
 class MappingTemplate(object):
@@ -186,13 +191,16 @@ class MappingTemplate(object):
             [self.system_message_prompt, self.human_message_prompt]
         )
 
+
 import openai
 import logging
+
 # import google.generativeai as genai
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import LLMChain, SequentialChain
 
 logging.basicConfig(level=logging.INFO)
+
 
 # Define Agent class to 1) validate, 2) provide itinerary, 3) map itinerary addresses
 class Agent(object):
@@ -207,7 +215,9 @@ class Agent(object):
         self.logger.setLevel(logging.INFO)
         self._openai_key = open_ai_api_key
 
-        self.chat_model = ChatOpenAI(model=model, temperature=temperature, openai_api_key=self._openai_key)
+        self.chat_model = ChatOpenAI(
+            model=model, temperature=temperature, openai_api_key=self._openai_key
+        )
         self.validation_prompt = ValidationTemplate()
         self.itinerary_prompt = ItineraryTemplate()
         self.mapping_prompt = MappingTemplate()
@@ -233,33 +243,33 @@ class Agent(object):
         return overall_chain
 
     def _set_up_agent_chain(self, debug=True):
-      travel_agent = LLMChain(
-              llm=self.chat_model,
-              prompt=self.itinerary_prompt.chat_prompt,
-              verbose=debug,
-              output_key="agent_suggestion"
-      )
+        travel_agent = LLMChain(
+            llm=self.chat_model,
+            prompt=self.itinerary_prompt.chat_prompt,
+            verbose=debug,
+            output_key="agent_suggestion",
+        )
 
-      parser = LLMChain(
-              llm=self.chat_model,
-              prompt=self.mapping_prompt.chat_prompt,
-              output_parser=self.mapping_prompt.parser,
-              verbose=debug,
-              output_key="mapping_list"
-      )
+        parser = LLMChain(
+            llm=self.chat_model,
+            prompt=self.mapping_prompt.chat_prompt,
+            output_parser=self.mapping_prompt.parser,
+            verbose=debug,
+            output_key="mapping_list",
+        )
 
-      overall_chain = SequentialChain(
-              chains=[travel_agent, parser],
-              input_variables=["query", "format_instructions"],
-              output_variables=["agent_suggestion", "mapping_list"],
-              verbose=debug
-      )
+        overall_chain = SequentialChain(
+            chains=[travel_agent, parser],
+            input_variables=["query", "format_instructions"],
+            output_variables=["agent_suggestion", "mapping_list"],
+            verbose=debug,
+        )
 
-      return overall_chain
+        return overall_chain
 
     def validate_travel(self, query):
-        self.logger.info("Validating query with {} model".format(
-                self.chat_model.model_name)
+        self.logger.info(
+            "Validating query with {} model".format(self.chat_model.model_name)
         )
         validation_result = self.validation_chain(
             {
@@ -273,8 +283,8 @@ class Agent(object):
         return validation_test
 
     def suggest_travel(self, query):
-        self.logger.info("Validating query with {} model".format(
-            self.chat_model.model_name)
+        self.logger.info(
+            "Validating query with {} model".format(self.chat_model.model_name)
         )
         validation_result = self.validation_chain(
             {
@@ -297,7 +307,8 @@ class Agent(object):
 
             self.logger.info(
                 "User request is valid, calling agent with {} model".format(
-                self.chat_model.model_name)
+                    self.chat_model.model_name
+                )
             )
 
             agent_result = self.agent_chain(
@@ -311,6 +322,7 @@ class Agent(object):
             list_of_places = agent_result["mapping_list"].dict()
 
             return trip_suggestion, list_of_places, validation_result
+
 
 ## Testing validation
 # travel_agent = Agent(open_ai_api_key=open_ai_key, verbose=True)
@@ -332,10 +344,11 @@ import streamlit as st
 from streamlit_folium import st_folium
 from streamlit_folium import folium_static
 from folium.plugins import MarkerCluster
-    
+
+
 def run_test(query):
     travel_agent = Agent(
-    open_ai_api_key=open_ai_key,
+        open_ai_api_key=open_ai_key,
     )
 
     itinerary, list_of_places, validation = travel_agent.suggest_travel(query)
@@ -382,7 +395,11 @@ def run_test(query):
             transit_type = "driving"
 
         # Extract the formatted addresses of stops from the coordinates dictionary
-        stops = [coordinates[key]["formatted_address"] for key in coordinates.keys() if "stop" in key]
+        stops = [
+            coordinates[key]["formatted_address"]
+            for key in coordinates.keys()
+            if "stop" in key
+        ]
 
         # Extract the formatted address of the start location
         start = coordinates["start"]["formatted_address"]
@@ -404,7 +421,11 @@ def run_test(query):
 
         return route
 
-    directions_result = get_route(get_stop_coordinates(list_of_places["start"],list_of_places["end"],list_of_places["stops"]))
+    directions_result = get_route(
+        get_stop_coordinates(
+            list_of_places["start"], list_of_places["end"], list_of_places["stops"]
+        )
+    )
 
     # Initialize an empty list to store marker points
     marker_points = []
@@ -419,7 +440,7 @@ def run_test(query):
         start, start_address = leg["start_location"], leg["start_address"]
 
         # Extract the end location and end address of the leg
-        end,  end_address = leg["end_location"], leg["end_address"]
+        end, end_address = leg["end_location"], leg["end_address"]
 
         # Convert the start location latitude and longitude to floats and create a tuple
         start_loc = (float(start["lat"]), float(start["lng"]))
@@ -431,7 +452,7 @@ def run_test(query):
         marker_points.append((start_loc, start_address))
 
         # If this is the last leg, append the end location and end address to the marker points list
-        if i == nlegs-1:
+        if i == nlegs - 1:
             marker_points.append((end_loc, end_address))
 
     import folium
@@ -452,11 +473,9 @@ def run_test(query):
     map_start_loc = [overall_route[0]["lat"], overall_route[0]["lng"]]
 
     def create_map():
-        if 'map' not in st.session_state or st.session_state.map is None:
+        if "map" not in st.session_state or st.session_state.map is None:
             map = folium.Map(
-            location=map_start_loc,
-            tiles="openstreetmap",
-            zoom_start=9
+                location=map_start_loc, tiles="openstreetmap", zoom_start=9
             )
             figure.add_child(map)
 
@@ -487,10 +506,10 @@ def run_test(query):
         folium_static(map)
 
     show_map()
-    
+
+
 with st.form("travel_form"):
-   query = st.text_input("Type your travel plan:")
-   submitted = st.form_submit_button("Submit")
-   if submitted:
-       run_test(query)
-    
+    query = st.text_input("Type your travel plan:")
+    submitted = st.form_submit_button("Submit")
+    if submitted:
+        run_test(query)
