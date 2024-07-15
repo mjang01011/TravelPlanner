@@ -11,7 +11,6 @@ TravelPlanner is a travel itinerary plan suggestion application that leverages L
 ## Features
 
 - **Itinerary Suggestion:** Based on user input, the application suggests optimized travel itineraries including stops and transportation modes.
-- **Integration with APIs:** Utilizes LangChain for natural language understanding, OpenAI for generating travel suggestions, and Google APIs for route planning and map display.
 - **User Interface with Streamlit:** Offers a straightforward web-based interface for users to interact with the application and view their travel plans visually.
 
 ## Installation
@@ -24,9 +23,8 @@ TravelPlanner is a travel itinerary plan suggestion application that leverages L
 
 1. **Set up API Keys:**
 - Create a `.env` file in the root directory.
-- Add your API keys for OpenAI, Google Gemini, and Google Maps in the following format:
+- Add your API keys for OpenAI and Google Maps in the following format:
   ```
   OPENAI_API_KEY=your_openai_api_key
-  GOOGLE_GEMINI_API_KEY=your_google_gemini_api_key
   GOOGLE_MAPS_API_KEY=your_google_maps_api_key
   ```
