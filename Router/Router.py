@@ -27,7 +27,7 @@ class Router:
         if stops:
             for i, stop in enumerate(stops):
                 coordinates[f"stop_{i}"] = self.get_coords(stop)[0]
-
+        
         # Return the dictionary containing coordinates for the start, end, and stops
         return coordinates
 
@@ -52,7 +52,7 @@ class Router:
 
         # Extract the formatted address of the end location
         end = coordinates["end"]["formatted_address"]
-
+        
         # Get directions from Google Maps API using the start, end, and stops
         route = self.gmaps.directions(
             start,
@@ -64,7 +64,6 @@ class Router:
             traffic_model="best_guess",
             departure_time=start_time,
         )
-
         return route
     
     def make_markers(self, route):
@@ -73,10 +72,13 @@ class Router:
                 route["start"], route["end"], route["stops"]
             )
         )
-
+            
         # Initialize an empty list to store marker points
         marker_points = []
 
+        if not directions_result:
+            return directions_result, marker_points
+        
         # Get the number of legs in the directions result
         nlegs = len(directions_result[0]["legs"])
 

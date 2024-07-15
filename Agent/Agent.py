@@ -108,11 +108,9 @@ class Agent(object):
 
         validation_test = validation_result["validation_output"].dict()
 
-        if validation_test["plan_is_valid"].lower() == "false":
+        if validation_test["plan_is_valid"] == "0":
             self.logger.warning("User request was not valid!")
-            print("\n######\n Travel plan is not valid \n######\n")
-            print(validation_test["updated_request"])
-            return None, None, validation_result
+            return None, None, validation_test["updated_request"]
 
         else:
             self.logger.info("Query is valid")
@@ -134,4 +132,4 @@ class Agent(object):
             trip_suggestion = agent_result["agent_suggestion"]
             list_of_places = agent_result["mapping_list"].dict()
 
-            return trip_suggestion, list_of_places, validation_result
+            return trip_suggestion, list_of_places, "Your query is valid!"
