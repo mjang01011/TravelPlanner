@@ -34,7 +34,7 @@ def main():
                 progress_bar.empty()
                 map = create_map(route_coords, marker_points, map_start_loc)
                 with map_col:
-                        st_folium(map, width="100%", returned_objects=[])
+                    st_folium(map, width="100%", returned_objects=[])
             else:
                 progress_bar.empty()
                 map_col.text("Error has occured with google maps api and wasn't able to generate a map.")
