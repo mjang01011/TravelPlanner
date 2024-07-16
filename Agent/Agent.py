@@ -121,15 +121,18 @@ class Agent(object):
                     self.chat_model.model_name
                 )
             )
+            try:
+                agent_result = self.agent_chain(
+                    {
+                        "query": query,
+                        "format_instructions": self.mapping_prompt.parser.get_format_instructions(),
+                    }
+                )
 
-            agent_result = self.agent_chain(
-                {
-                    "query": query,
-                    "format_instructions": self.mapping_prompt.parser.get_format_instructions(),
-                }
-            )
+                trip_suggestion = agent_result["agent_suggestion"]
+                list_of_places = agent_result["mapping_list"].dict()
+        
+            except:
+                return None, None, False
 
-            trip_suggestion = agent_result["agent_suggestion"]
-            list_of_places = agent_result["mapping_list"].dict()
-
-            return trip_suggestion, list_of_places, "Your query is valid!"
+            return trip_suggestion, list_of_places, True
