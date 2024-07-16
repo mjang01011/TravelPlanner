@@ -8,12 +8,13 @@ from googlemaps.convert import decode_polyline
 import time
 
 # Loads api keys
-def load_api_keys():
+def load_keys():
     load_dotenv(find_dotenv(), override=True)
     return {
         "open_ai_key": os.environ.get("OPENAI_API_KEY"),
         # "google_gemini_key": os.environ.get("GOOGLE_GEMINI_API_KEY"),
         "google_maps_key": os.environ.get("GOOGLE_MAPS_API_KEY"),
+        "mongo_uri": os.environ.get("MONGO_URI")
     }
 
 def create_travel_agent(open_ai_key):
