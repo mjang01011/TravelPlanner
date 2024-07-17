@@ -1,15 +1,17 @@
 from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map
-from Router.Router import Router
 import streamlit as st
 from streamlit_folium import st_folium
 import time
-import pymongo
-import hashlib
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
 
 def main():
+    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+    if "auth" in st.session_state and st.session_state.auth:
+        st.markdown("<h1 style='text-align: center;'>You are already logged in. Redirecting to main page.</h1>", unsafe_allow_html=True)
+        time.sleep(2)
+        st.switch_page("test_streamlit_main.py")
     client = MongoClient(load_keys()["mongo_uri"], server_api=ServerApi('1'))
     try:
         client.admin.command('ping')
@@ -29,7 +31,6 @@ def main():
             return user
         return None
 
-    st.set_page_config(layout="wide")
     st.title("Login to TravelPlanner")
 
     username = st.text_input("Username")
@@ -39,14 +40,14 @@ def main():
         if username and password:
             user = authenticate_user(username, password)
             if user:
-                st.session_state.user = user
+                st.session_state.auth = True
             else:
                 st.error("Invalid username or password")
         else:
             st.warning("Please enter username and password")
     
-    if "user" in st.session_state:
-        st.switch_page("pages/test_strealit_main.py")
-
+    if "auth" in st.session_state and st.session_state.auth:
+        st.switch_page("test_streamlit_main.py")
+        
 if __name__ == "__main__":
     main()

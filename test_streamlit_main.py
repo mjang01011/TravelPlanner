@@ -3,14 +3,14 @@ from Router.Router import Router
 import streamlit as st
 from streamlit_folium import st_folium
 import time
-import pymongo
-import hashlib
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 st.title("Travel Planner")
-if st.button("Login to Log your Plans!"):
-    st.switch_page("pages/test_streamlit_login.py")
+if 'auth' not in st.session_state:
+    st.session_state.auth = False
+if not st.session_state.auth:
+    if st.button("Login to Log your Plans!"):
+        st.switch_page("pages/test_streamlit_login.py")
 with st.form("travel_form"):
     input_query = st.text_input("Type your travel plan:")
     submitted = st.form_submit_button("Submit")

@@ -1,6 +1,6 @@
 TODO:
 1) Fix googlemaps search from coords to id
-2) User authentication to log plans
+2) Detailed prompting from user other than query (ex. select preplanned locations)
 
 # TravelPlanner
 
