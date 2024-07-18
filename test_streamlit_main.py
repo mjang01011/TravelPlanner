@@ -32,14 +32,17 @@ map_col, itinerary_col = st.columns([1,1], gap="small")
         
 if submitted:
     try:
+        map_col.empty()
         map_col.subheader("Route Map")
         itinerary_col.subheader("Itinerary Details")
         progress_bar = map_col.progress(0,"Validating your travel plan...")
         travel_agent = create_travel_agent(keys["open_ai_key"])
         itinerary, list_of_places, validation = get_itinerary(travel_agent, input_query)
         st.session_state.itinerary = itinerary
+        print("Itinerary: ", itinerary)
+        print("Places: ",list_of_places)
+        print("Validation: ",validation)
         st.session_state.list_of_places = list_of_places
-        print(list_of_places)
         st.session_state.initial_list_of_places = list_of_places.copy()
         st.session_state.validation = validation
         if validation:
@@ -64,12 +67,18 @@ if submitted:
     except Exception as e:
         map_col.error(f"An error occurred: {e}")
 
-if 'list_of_places' in st.session_state:        
-    boxes = []
+if 'initial_list_of_places' in st.session_state:        
+    suggestions = []
     with itinerary_col:
         itinerary_col.text(st.session_state.itinerary)
+        st.text("Currently suggested places to visit:")
         for i, place in enumerate(st.session_state.initial_list_of_places['stops']):
-            boxes.append(st.checkbox(place, value=True))
-        st.session_state.list_of_places['stops'] = [stop for stop, keep in zip(st.session_state.initial_list_of_places['stops'], boxes) if keep]
-    with map_col:
-        st_folium(updateMap(st.session_state.list_of_places), width="100%", returned_objects=[], key="map_folium_updated")
+            suggestions.append(st.checkbox(place, value=True))
+        st.divider()
+        st.text("Extra places you may want to consider:")
+        for i, place in enumerate(st.session_state.initial_list_of_places['extra_stops']):
+            suggestions.append(st.checkbox(place, value=False))
+        st.session_state.list_of_places['stops'] = [stop for stop, keep in zip(st.session_state.initial_list_of_places['stops'], suggestions) if keep]
+    if not submitted:
+        with map_col:
+            st_folium(updateMap(st.session_state.list_of_places), width="100%", returned_objects=[], key="map_folium_updated")

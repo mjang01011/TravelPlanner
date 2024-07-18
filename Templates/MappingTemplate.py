@@ -12,6 +12,7 @@ class Trip(BaseModel):
     end: str = Field(description="end location of trip")
     stops: list[str] = Field(description="list of stops")
     transit: str = Field(description="mode of transportation")
+    extra_stops: list[str] = Field(description="extra list of stops")
     
 # Define MappingTemplate
 class MappingTemplate(object):
@@ -23,8 +24,10 @@ class MappingTemplate(object):
       list of places that they should visit. Try to include the specific address of each location.
 
       Your output should always contain the start and end point of the trip, and may also include a list
-      of stops. It should also include a mode of transit. The number of stops cannot exceed 20.
-      If you can't infer the mode of transit, make a best guess given the trip location.
+      of stops. Make sure to include extra list of stops to provide the user with more options that they may explore.
+      Your output should also include a mode of transit. The number of stops cannot exceed 20.
+      If you can't infer the mode of transit, make a best guess given the trip location. Make sure to include on which day
+      to visit each location.
 
       For example:
 
@@ -46,9 +49,19 @@ class MappingTemplate(object):
       Output:
       Start: Buckingham Palace, The Mall, London SW1A 1AA
       End: Tower Bridge, Tower Bridge Rd, London SE1 2UP
-      Waypoints: ["Tower of London, Tower Hill, London EC3N 4AB", "British Museum, Great Russell St, Bloomsbury, London WC1B 3DG", "Oxford St, London W1C 1JN", "Covent Garden, London WC2E 8RF","Westminster, London SW1A 0AA", "St. James's Park, London", "Natural History Museum, Cromwell Rd, Kensington, London SW7 5BD"]
+      Stops: ["Tower of London, Tower Hill, London EC3N 4AB", "British Museum, Great Russell St, Bloomsbury, London WC1B 3DG", "Oxford St, London W1C 1JN", "Covent Garden, London WC2E 8RF","Westminster, London SW1A 0AA", "St. James's Park, London", "Natural History Museum, Cromwell Rd, Kensington, London SW7 5BD"]
       Transit: driving
-
+      Extra_stops = [
+          "Tate Modern, Bankside, London SE1 9TG",
+          "The Shard, 32 London Bridge St, London SE1 9SG",
+          "Kensington Palace, Kensington Gardens, London W8 4PX",
+          "Science Museum, Exhibition Rd, South Kensington, London SW7 2DD",
+          "Victoria and Albert Museum, Cromwell Rd, Knightsbridge, London SW7 2RL",
+          "Hyde Park, London W2 2UH",
+          "Piccadilly Circus, London W1J 9HS",
+          "Leicester Square, London WC2H 7LU",
+          "The National Gallery, Trafalgar Square, London WC2N 5DN"
+      ]
       Transit can be only one of the following options: "walking", "driving", "train", "bus", "subway", or "flight".
 
       {format_instructions}
