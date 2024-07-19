@@ -2,6 +2,8 @@ from utils import load_keys
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime, timezone
+import uuid
+from bson.binary import Binary
 
 client = MongoClient(load_keys()["mongo_uri"], server_api=ServerApi('1'))
 try:
@@ -14,13 +16,13 @@ users_collection = db["users"]
 
 # Example user data
 user_data = {
-    "user_id": "user",
+    "uid": Binary(uuid.uuid4().bytes, 4),
+    "username": "user",
     "password": "asd123",
     "email": "john.doe@example.com",
-    "created_at": datetime.now(timezone.utc),
-    "last_login": datetime.now(timezone.utc),
     "queries": [
         {
+            "qid": Binary(uuid.uuid4().bytes, 4),
             "query": "I want to do a 2 day roadtrip within LA. I want to visit the famous attractions along the route.",
             "timestamp": datetime.now(timezone.utc),
             "itinerary" : """
@@ -45,6 +47,7 @@ user_data = {
                                                'The Hollywood Bowl, 2301 N Highland Ave, Los Angeles, CA 90068', 'Malibu Pier, 23000 Pacific Coast Hwy, Malibu, CA 90265', 'Getty Villa, 17985 Pacific Coast Hwy, Pacific Palisades, CA 90272', 'Third Street Promenade, Santa Monica, CA 90401', 'Abbot Kinney Boulevard, Venice, CA 90291']}
         },
         {
+            "qid": Binary(uuid.uuid4().bytes, 4),
             "query": "I want to do a 3 day roadtrip within New York. I want to visit the famous attractions along the route.",
             "timestamp": datetime.now(timezone.utc),
             "itinerary": """

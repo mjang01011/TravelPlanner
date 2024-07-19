@@ -8,8 +8,6 @@ sys.path.append(parent_dir)
 from utils import load_keys, connect_db, update_map
 import streamlit as st
 from streamlit_folium import st_folium
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 import time
 
 def main():
@@ -22,17 +20,32 @@ def main():
     redirect_main = st.button("Main Page")
     if redirect_main:
         st.switch_page("main.py")
-    def fetch_records(username):
-        user = users_collection.find_one({"user_id": username})
+    def fetch_records(uid):
+        user = users_collection.find_one({"uid": uid})
         queries = user["queries"]
+        if queries is None:
+            st.text("You do not have any logged travel plans.")
+            return
         query_record = []
-        for i, query in enumerate(queries):
+        query_qid = []
+        for query in queries:
            query_record.append(query["query"]) 
-        selected_query = st.selectbox(
+           query_qid.append(query["qid"])
+        selected_index = st.selectbox(
             "Select your past travel plan",
-            query_record
+            range(len(query_record)),
+            format_func=lambda x: query_record[x]
         )
-        selected_index = query_record.index(selected_query)
+        print(selected_index)
+        if st.button("Delete"):
+            @st.experimental_dialog("Are you sure you want to delete?")
+            def confirm_deletion():
+                if st.button("Yes"):
+                    users_collection.update_one({"uid": uid}, { "$pull": {"queries": {"qid": query_qid[selected_index]}} })
+                    st.success("Successfully deleted your plan.")
+                    time.sleep(2)
+                    st.rerun()
+            confirm_deletion()
         map_col, itinerary_col = st.columns([1,1], gap="small")
         map_col.subheader("Route Map")
         itinerary_col.subheader("Itinerary Details")
@@ -48,8 +61,7 @@ def main():
         #     with map_col:
         #         st_folium(update_map(query["list_of_places"], keys["google_maps_key"]), width="100%", returned_objects=[], key=f"map_folium_{i}")
         #     st.divider()
-
-    fetch_records(st.session_state.username)
+    fetch_records(st.session_state.uid)
 
 if __name__ == "__main__":
     main()

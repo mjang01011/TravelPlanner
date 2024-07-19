@@ -1,9 +1,12 @@
-from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map, update_map, connect_db, display_message
+from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_updated_itinerary, get_directions, decode_route, create_map, update_map, connect_db, display_message
 from Router.Router import Router
 import streamlit as st
 from streamlit_folium import st_folium
 import time
 from datetime import datetime, timezone
+import uuid
+from bson.binary import Binary
+import json
 
 
 keys = load_keys()
@@ -53,10 +56,9 @@ if query_submitted:
             time.sleep(0.5)
             progress_bar.empty()
             map = create_map(route_coords, marker_points, map_start_loc)
-            st.session_state.map = map
+            initial_map = True
             with map_col:
                 st_folium(map, width="100%", returned_objects=[])
-            
         else:
             progress_bar.empty()
             map_col.text("Error has occured with google maps api and wasn't able to generate a map.")
@@ -65,6 +67,7 @@ if query_submitted:
         map_col.error(f"An error occurred: {e}")
 
 add_to_past_records = st.button("Add to past records")
+
 
 if 'initial_list_of_places' in st.session_state:        
     suggestions = []
@@ -86,21 +89,29 @@ if 'initial_list_of_places' in st.session_state:
                 new_extra_stops.append(stop)
         st.session_state.list_of_places['stops'] = new_stops
         st.session_state.list_of_places['extra_stops'] = new_extra_stops
-    with map_col:
-        st_folium(update_map(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
+        with map_col:
+            st_folium(update_map(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
+        
+update_itinerary = st.button("Update Map & Itinerary")
+if update_itinerary:
+    travel_agent = create_travel_agent(keys["open_ai_key"])
+    print(get_updated_itinerary(travel_agent, st.session_state.input_query, json.dumps(st.session_state.list_of_places)))
 
 if add_to_past_records:
     if not st.session_state.auth:
         st.warning("You are not logged in. Please log in to add your travel plan.")
+        time.sleep(2)
+        st.switch_page("pages/login.py")
     users_collection = connect_db()
     new_query = {
+        "qid": Binary(uuid.uuid4().bytes, 4),
         "query": st.session_state.input_query,
         "timestamp": datetime.now(timezone.utc),
         "itinerary": f"""{st.session_state.itinerary}""",
         'list_of_places': st.session_state.list_of_places
     }
     result = users_collection.update_one(
-        {"user_id": st.session_state.username},
+        {"uid": st.session_state.uid},
         {"$push": {"queries": new_query}}
     )
     if result.matched_count > 0:

@@ -48,6 +48,9 @@ def increment_progress_bar(progress_bar, prev, final, text):
 def get_itinerary(travel_agent, query):
     return travel_agent.suggest_travel(query)
 
+def get_updated_itinerary(travel_agent, query, mapping_list):
+    return travel_agent.update_itinerary(query, mapping_list)
+
 def get_directions(router, list_of_places):
     directions_result, marker_points = router.make_markers(list_of_places)
     return directions_result, marker_points

@@ -3,6 +3,7 @@ from langchain_openai import ChatOpenAI
 from Templates.ItineraryTemplate import ItineraryTemplate
 from Templates.MappingTemplate import MappingTemplate
 from Templates.ValidationTemplate import ValidationTemplate
+from Templates.UpdateItineraryTemplate import UpdateItineraryTemplate
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -26,8 +27,10 @@ class Agent(object):
         self.validation_prompt = ValidationTemplate()
         self.itinerary_prompt = ItineraryTemplate()
         self.mapping_prompt = MappingTemplate()
+        self.update_itinerary_prompt = UpdateItineraryTemplate()
         self.validation_chain = self._set_up_validation_chain(verbose)
         self.agent_chain = self._set_up_agent_chain(verbose)
+        self.update_chain = self._set_up_update_chain(verbose)
 
     def _set_up_validation_chain(self, verbose=True):
         validation_agent = LLMChain(
@@ -72,6 +75,24 @@ class Agent(object):
 
         return overall_chain
 
+    def _set_up_update_chain(self, verbose=True):
+        
+        parser = LLMChain(
+            llm=self.chat_model,
+            prompt=self.update_itinerary_prompt.chat_prompt,
+            verbose=verbose,
+            output_key="itinerary",
+        )
+
+        overall_chain = SequentialChain(
+            chains=[parser],
+            input_variables=["query", "mapping_list"],
+            output_variables=["itinerary"],
+            verbose=verbose,
+        )
+        
+        return overall_chain
+    
     def validate_travel(self, query):
         self.logger.info(
             "Validating query with {} model".format(self.chat_model.model_name)
@@ -136,3 +157,19 @@ class Agent(object):
                 return None, None, False
 
             return trip_suggestion, list_of_places, True
+    
+    def update_itinerary(self, query, mapping_list):
+        try:
+            itinerary = self.update_chain(
+                {
+                    "query": query,
+                    "mapping_list": mapping_list,
+                }
+            )
+
+            trip_suggestion = itinerary["itinerary"]
+    
+        except:
+            return None
+
+        return trip_suggestion

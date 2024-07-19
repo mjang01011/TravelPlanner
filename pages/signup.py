@@ -8,7 +8,8 @@ sys.path.append(parent_dir)
 from utils import connect_db, display_message
 import streamlit as st
 import time
-from datetime import datetime, timezone
+import uuid
+from bson.binary import Binary
 
 st.title("Signup to TravelPlanner")
 users_collection = connect_db()
@@ -21,16 +22,15 @@ email = st.text_input("Email")
 
 if st.button("Create Account"):
     if username and password:
-        username_exists = users_collection.find_one({"user_id": username})
+        username_exists = users_collection.find_one({"username": username})
         if username_exists:
             st.error("Username already exists.")
         else:
             user_data = {
-                "user_id": username,
+                "uid": Binary(uuid.uuid4().bytes, 4),
+                "username": username,
                 "password": password,
                 "email": email,
-                "created_at": datetime.now(timezone.utc),
-                "last_login": datetime.now(timezone.utc),
                 "queries": []
             }
             try:

@@ -18,3 +18,4 @@ pymongo
 streamlit
 streamlit-folium
 streamlit_modal
+uuid

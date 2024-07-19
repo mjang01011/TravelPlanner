@@ -5,9 +5,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from utils import load_keys, connect_db
+from utils import connect_db
 import streamlit as st
-from streamlit_folium import st_folium
 import time
 
 
@@ -20,9 +19,9 @@ def main():
     users_collection = connect_db()
     
     def authenticate_user(username, password):
-        user = users_collection.find_one({"user_id": username})
+        user = users_collection.find_one({"username": username})
         if user and password == user["password"]:
-            return user
+            return user["uid"]
         return None
 
     st.title("Login to TravelPlanner")
@@ -33,10 +32,10 @@ def main():
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         if username and password:
-            user = authenticate_user(username, password)
-            if user:
+            uid = authenticate_user(username, password)
+            if uid:
                 st.session_state.auth = True
-                st.session_state.username = username
+                st.session_state.uid = uid
             else:
                 st.error("Invalid username or password")
         else:
