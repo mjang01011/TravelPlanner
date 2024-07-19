@@ -1,3 +1,10 @@
+import sys
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map
 import streamlit as st
 from streamlit_folium import st_folium
@@ -23,16 +30,14 @@ def main():
     
     def authenticate_user(username, password):
         user = users_collection.find_one({"user_id": username})
-        # if user:
-        #     hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        #     if hashed_password == user["password_hash"]:
-        #         return user
         if user and password == user["password"]:
             return user
         return None
 
     st.title("Login to TravelPlanner")
-
+    redirect_main = st.button("Main Page")
+    if redirect_main:
+        st.switch_page("test_streamlit_main.py")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
@@ -41,6 +46,7 @@ def main():
             user = authenticate_user(username, password)
             if user:
                 st.session_state.auth = True
+                st.session_state.username = username
             else:
                 st.error("Invalid username or password")
         else:

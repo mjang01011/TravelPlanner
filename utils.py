@@ -1,13 +1,12 @@
 import os
 from dotenv import load_dotenv, find_dotenv
 from Agent.Agent import Agent
+from Router.Router import Router
 import folium
 from branca.element import Figure
 from googlemaps.convert import decode_polyline
-
 import time
 
-# Loads api keys
 def load_keys():
     load_dotenv(find_dotenv(), override=True)
     return {
@@ -60,4 +59,12 @@ def create_map(route_coords, marker_points, map_start_loc):
     ).add_to(f_group)
     f_group.add_to(map)
     
+    return map
+
+def updateMap(list_of_places, google_maps_key):
+    router = Router(google_maps_key=google_maps_key)
+    directions_result, marker_points = get_directions(router, list_of_places)
+    route_coords = decode_route(directions_result)
+    map_start_loc = [route_coords[0][0], route_coords[0][1]]
+    map = create_map(route_coords, marker_points, map_start_loc)
     return map

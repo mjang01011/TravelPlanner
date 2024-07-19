@@ -1,11 +1,11 @@
-from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map
+from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map, updateMap
 from Router.Router import Router
 import streamlit as st
 from streamlit_folium import st_folium
 import time
 
-def updateMap(list_of_places):
-    router = Router(google_maps_key=keys["google_maps_key"])
+def updateMap(list_of_places, google_maps_key):
+    router = Router(google_maps_key=google_maps_key)
     directions_result, marker_points = get_directions(router, list_of_places)
     route_coords = decode_route(directions_result)
     map_start_loc = [route_coords[0][0], route_coords[0][1]]
@@ -13,24 +13,27 @@ def updateMap(list_of_places):
     return map
 
 keys = load_keys()
+keys = keys
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-st.title("Travel Planner")
+title, login = st.columns([0.9, 0.1])
+title.title("Travel Planner")
 if 'auth' not in st.session_state:
     st.session_state.auth = False
 if not st.session_state.auth:
-    if st.button("Login to Log your Plans!"):
+    if login.button("Login"):
         st.switch_page("pages/test_streamlit_login.py")
+else:
+    if login.button("Logout"):
+        st.session_state.auth = False
+        st.rerun()
+    if st.button("View your past plans!"):
+        st.switch_page("pages/past_records.py")
 with st.form("travel_form"):
     input_query = st.text_input("Type your travel plan:")
-    submitted = st.form_submit_button("Submit")
+    query_submitted = st.form_submit_button("Submit")
 map_col, itinerary_col = st.columns([1,1], gap="small")
-
-# if 'initial_list_of_places' in st.session_state:
-#     itinerary_col.text(st.session_state.itinerary)
-#     with map_col:
-#         st_folium(updateMap(st.session_state.list_of_places), width="100%", returned_objects=[])
         
-if submitted:
+if query_submitted:
     try:
         map_col.empty()
         map_col.subheader("Route Map")
@@ -79,6 +82,6 @@ if 'initial_list_of_places' in st.session_state:
         for i, place in enumerate(st.session_state.initial_list_of_places['extra_stops']):
             suggestions.append(st.checkbox(place, value=False))
         st.session_state.list_of_places['stops'] = [stop for stop, keep in zip(st.session_state.initial_list_of_places['stops'], suggestions) if keep]
-    if not submitted:
+    if not query_submitted:
         with map_col:
-            st_folium(updateMap(st.session_state.list_of_places), width="100%", returned_objects=[], key="map_folium_updated")
+            st_folium(updateMap(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
