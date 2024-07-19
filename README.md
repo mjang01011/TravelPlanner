@@ -1,6 +1,7 @@
 TODO:
 1) Fix googlemaps search from coords to id
 2) Detailed prompting from user other than query (ex. select preplanned locations)
+3) Decide whether or not to update itinery details dynamically
 
 # TravelPlanner
 

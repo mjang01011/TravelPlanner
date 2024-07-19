@@ -3,9 +3,12 @@ from dotenv import load_dotenv, find_dotenv
 from Agent.Agent import Agent
 from Router.Router import Router
 import folium
-from branca.element import Figure
 from googlemaps.convert import decode_polyline
 import time
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+import streamlit as st
+from streamlit_modal import Modal
 
 def load_keys():
     load_dotenv(find_dotenv(), override=True)
@@ -15,6 +18,24 @@ def load_keys():
         "google_maps_key": os.environ.get("GOOGLE_MAPS_API_KEY"),
         "mongo_uri": os.environ.get("MONGO_URI")
     }
+
+def connect_db():
+    keys = load_keys()
+    client = MongoClient(keys["mongo_uri"], server_api=ServerApi('1'))
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+    except Exception as e:
+        print(e)
+    db = client["TravelPlanner"]
+    users_collection = db["users"]
+    return users_collection
+
+def display_message(title, message):
+    modal = Modal(key=title, title=title)
+    with modal.container():
+        st.text(message)
+    return modal
 
 def create_travel_agent(open_ai_key):
     return Agent(open_ai_api_key=open_ai_key)
@@ -61,7 +82,7 @@ def create_map(route_coords, marker_points, map_start_loc):
     
     return map
 
-def updateMap(list_of_places, google_maps_key):
+def update_map(list_of_places, google_maps_key):
     router = Router(google_maps_key=google_maps_key)
     directions_result, marker_points = get_directions(router, list_of_places)
     route_coords = decode_route(directions_result)

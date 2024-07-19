@@ -1,19 +1,12 @@
-from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map, updateMap
+from utils import load_keys, create_travel_agent, increment_progress_bar, get_itinerary, get_directions, decode_route, create_map, update_map, connect_db, display_message
 from Router.Router import Router
 import streamlit as st
 from streamlit_folium import st_folium
 import time
+from datetime import datetime, timezone
 
-def updateMap(list_of_places, google_maps_key):
-    router = Router(google_maps_key=google_maps_key)
-    directions_result, marker_points = get_directions(router, list_of_places)
-    route_coords = decode_route(directions_result)
-    map_start_loc = [route_coords[0][0], route_coords[0][1]]
-    map = create_map(route_coords, marker_points, map_start_loc)
-    return map
 
 keys = load_keys()
-keys = keys
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 title, login = st.columns([0.9, 0.1])
 title.title("Travel Planner")
@@ -21,7 +14,7 @@ if 'auth' not in st.session_state:
     st.session_state.auth = False
 if not st.session_state.auth:
     if login.button("Login"):
-        st.switch_page("pages/test_streamlit_login.py")
+        st.switch_page("pages/login.py")
 else:
     if login.button("Logout"):
         st.session_state.auth = False
@@ -32,7 +25,7 @@ with st.form("travel_form"):
     input_query = st.text_input("Type your travel plan:")
     query_submitted = st.form_submit_button("Submit")
 map_col, itinerary_col = st.columns([1,1], gap="small")
-        
+
 if query_submitted:
     try:
         map_col.empty()
@@ -41,6 +34,7 @@ if query_submitted:
         progress_bar = map_col.progress(0,"Validating your travel plan...")
         travel_agent = create_travel_agent(keys["open_ai_key"])
         itinerary, list_of_places, validation = get_itinerary(travel_agent, input_query)
+        st.session_state.input_query = input_query
         st.session_state.itinerary = itinerary
         print("Itinerary: ", itinerary)
         print("Places: ",list_of_places)
@@ -70,6 +64,8 @@ if query_submitted:
     except Exception as e:
         map_col.error(f"An error occurred: {e}")
 
+add_to_past_records = st.button("Add to past records")
+
 if 'initial_list_of_places' in st.session_state:        
     suggestions = []
     with itinerary_col:
@@ -81,7 +77,34 @@ if 'initial_list_of_places' in st.session_state:
         st.text("Extra places you may want to consider:")
         for i, place in enumerate(st.session_state.initial_list_of_places['extra_stops']):
             suggestions.append(st.checkbox(place, value=False))
-        st.session_state.list_of_places['stops'] = [stop for stop, keep in zip(st.session_state.initial_list_of_places['stops'], suggestions) if keep]
-    if not query_submitted:
-        with map_col:
-            st_folium(updateMap(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
+        new_stops = []
+        new_extra_stops = []
+        for stop, keep in zip(st.session_state.initial_list_of_places['stops'] + st.session_state.initial_list_of_places['extra_stops'], suggestions):
+            if keep:
+                new_stops.append(stop)
+            else:
+                new_extra_stops.append(stop)
+        st.session_state.list_of_places['stops'] = new_stops
+        st.session_state.list_of_places['extra_stops'] = new_extra_stops
+    with map_col:
+        st_folium(update_map(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
+
+if add_to_past_records:
+    if not st.session_state.auth:
+        st.warning("You are not logged in. Please log in to add your travel plan.")
+    users_collection = connect_db()
+    new_query = {
+        "query": st.session_state.input_query,
+        "timestamp": datetime.now(timezone.utc),
+        "itinerary": f"""{st.session_state.itinerary}""",
+        'list_of_places': st.session_state.list_of_places
+    }
+    result = users_collection.update_one(
+        {"user_id": st.session_state.username},
+        {"$push": {"queries": new_query}}
+    )
+    if result.matched_count > 0:
+        display_message("Success!", "Your travel plan has been added.")
+    else:
+        display_message("Failed!", "An error occurred with adding your travel plan. Please try again.")
+    
