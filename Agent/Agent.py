@@ -77,7 +77,7 @@ class Agent(object):
 
     def _set_up_update_chain(self, verbose=True):
         
-        parser = LLMChain(
+        update_agent = LLMChain(
             llm=self.chat_model,
             prompt=self.update_itinerary_prompt.chat_prompt,
             verbose=verbose,
@@ -85,7 +85,7 @@ class Agent(object):
         )
 
         overall_chain = SequentialChain(
-            chains=[parser],
+            chains=[update_agent],
             input_variables=["query", "mapping_list"],
             output_variables=["itinerary"],
             verbose=verbose,

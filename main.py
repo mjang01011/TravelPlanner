@@ -27,7 +27,7 @@ else:
 with st.form("travel_form"):
     input_query = st.text_input("Type your travel plan:")
     query_submitted = st.form_submit_button("Submit")
-map_col, itinerary_col = st.columns([1,1], gap="small")
+map_col, itinerary_col, update_buttons = st.columns([0.45,0.45,0.1], gap="small")
 
 if query_submitted:
     try:
@@ -66,13 +66,14 @@ if query_submitted:
     except Exception as e:
         map_col.error(f"An error occurred: {e}")
 
-add_to_past_records = st.button("Add to past records")
 
 
 if 'initial_list_of_places' in st.session_state:        
     suggestions = []
     with itinerary_col:
-        itinerary_col.text(st.session_state.itinerary)
+        add_to_past_records = update_buttons.button("Add to past records")
+        update_itinerary = update_buttons.button("Update Itinerary")
+        itinerary_text = itinerary_col.text(st.session_state.itinerary)
         st.text("Currently suggested places to visit:")
         for i, place in enumerate(st.session_state.initial_list_of_places['stops']):
             suggestions.append(st.checkbox(place, value=True))
@@ -92,14 +93,14 @@ if 'initial_list_of_places' in st.session_state:
         with map_col:
             st_folium(update_map(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
         
-update_itinerary = st.button("Update Map & Itinerary")
 if update_itinerary:
     travel_agent = create_travel_agent(keys["open_ai_key"])
-    print(get_updated_itinerary(travel_agent, st.session_state.input_query, json.dumps(st.session_state.list_of_places)))
+    st.session_state.itinerary = get_updated_itinerary(travel_agent, st.session_state.input_query, json.dumps(st.session_state.list_of_places))
+    st.rerun()
 
 if add_to_past_records:
     if not st.session_state.auth:
-        st.warning("You are not logged in. Please log in to add your travel plan.")
+        update_buttons.warning("You are not logged in. Please log in to add your travel plan.")
         time.sleep(2)
         st.switch_page("pages/login.py")
     users_collection = connect_db()

@@ -20,17 +20,21 @@ class UpdateItineraryTemplate(object):
     
     Example of a mapping_list:
     @@@@
-    {'start': 'Times Square, Manhattan, NY 10036', 'end': 'Broadway, New York, NY', 
+    mapping_list = (
+    'start': 'Times Square, Manhattan, NY 10036', 'end': 'Broadway, New York, NY', 
                                 'stops': ['Empire State Building, 20 W 34th St, New York, NY 10118', 'Central Park, New York, NY', 'Museum of Modern Art, 11 W 53rd St, New York, NY 10019', 'Rockefeller Center, 45 Rockefeller Plaza, New York, NY 10111', 'Statue of Liberty National Monument, New York, NY 10004', 
                                           'One World Trade Center, 285 Fulton St, New York, NY 10007', '9/11 Memorial & Museum, 180 Greenwich St, New York, NY 10007', 'Brooklyn Bridge, New York, NY 10038', 'The Metropolitan Museum of Art, 1000 5th Ave, New York, NY 10028'], 'transit': 'walking', 
                                 'extra_stops': ['Central Park Zoo, E 64th St, New York, NY 10021', 'The High Line, New York, NY', 'Grand Central Terminal, 89 E 42nd St, New York, NY 10017', 'Times Square, New York, NY', 'Carnegie Hall, 881 7th Ave, New York, NY 10019', 'Battery Park, New York, NY', 
-                                                'Chinatown, New York, NY', 'The Vessel, 20 Hudson Yards, New York, NY 10001', 'Madison Square Garden, 4 Pennsylvania Plaza, New York, NY 10001', 'The Cloisters, 99 Margaret Corbin Dr, New York, NY 10040']}
+                                                'Chinatown, New York, NY', 'The Vessel, 20 Hudson Yards, New York, NY 10001', 'Madison Square Garden, 4 Pennsylvania Plaza, New York, NY 10001', 'The Cloisters, 99 Margaret Corbin Dr, New York, NY 10040']
+                                                )
     @@@@
     
     Your goal is to recommend a detailed and organized itinerary as a bulleted list with clear start and end locations.
-    Make sure to only include the places mentioned in the 'Stops' list from the query. Do not include places mentioned in the
-    'Extra_stops' list from the query.
-    Also make sure to include on which day the user should visit each places.
+    Make sure to only include the places mentioned in the 'stops' list from the mapping_list. Do not include other places such as those mentioned in the
+    'Extra_stops' list from the mapping_list.
+    Also make sure to design a itinerary equal to the number of days that the user wants to travel based on the query.
+    One exception is if there are less places in 'stops' in mapping list than the number of days that the user wants to travel, you can shorten the days.
+    There should only be one plan for each day.
     If specific start and end locations are not given, choose ones that you think are suitable and give specific addresses.
     Your output must be the list and nothing else.
     
