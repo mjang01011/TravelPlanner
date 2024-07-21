@@ -57,7 +57,7 @@ def get_directions(router, list_of_places):
 
 def decode_route(directions_result):
     if not directions_result or not directions_result[0].get("overview_polyline"):
-        raise ValueError("Invalid directions result")
+        return None
     
     overall_route = decode_polyline(directions_result[0]["overview_polyline"]["points"])
     return [(float(p["lat"]), float(p["lng"])) for p in overall_route]
@@ -89,6 +89,8 @@ def update_map(list_of_places, google_maps_key):
     router = Router(google_maps_key=google_maps_key)
     directions_result, marker_points = get_directions(router, list_of_places)
     route_coords = decode_route(directions_result)
+    if route_coords == None:
+        return st.warning("Error has occured with google maps API. Please try again.")
     map_start_loc = [route_coords[0][0], route_coords[0][1]]
     map = create_map(route_coords, marker_points, map_start_loc)
     return map
