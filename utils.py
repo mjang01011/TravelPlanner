@@ -14,7 +14,7 @@ def load_keys():
     load_dotenv(find_dotenv(), override=True)
     return {
         "open_ai_key": os.environ.get("OPENAI_API_KEY"),
-        # "google_gemini_key": os.environ.get("GOOGLE_GEMINI_API_KEY"),
+        "google_gemini_key": os.environ.get("GEMINI_API_KEY"),
         "google_maps_key": os.environ.get("GOOGLE_MAPS_API_KEY"),
         "mongo_uri": os.environ.get("MONGO_URI")
     }
@@ -37,8 +37,8 @@ def display_message(title, message):
         st.text(message)
     return modal
 
-def create_travel_agent(open_ai_key):
-    return Agent(open_ai_api_key=open_ai_key)
+def create_travel_agent(api_key, model="gpt-3.5-turbo"):
+    return Agent(api_key=api_key, model=model)
 
 def increment_progress_bar(progress_bar, prev, final, text):
     for i in range(prev, final):

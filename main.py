@@ -27,6 +27,10 @@ else:
 with st.form("travel_form"):
     input_query = st.text_input("Type your travel plan:")
     query_submitted = st.form_submit_button("Submit")
+select_llm_model = st.radio("Choose LLM Model:", ["gpt-3.5-turbo", "gemini-1.5-pro"])
+st.session_state.llm_model = select_llm_model
+llm_model_names = ["gpt-3.5-turbo", "gemini-1.5-pro"]
+llm_model_keys = ["open_ai_key", "google_gemini_key"]
 map_col, itinerary_col, update_buttons = st.columns([0.45,0.45,0.1], gap="small")
 
 if query_submitted:
@@ -38,7 +42,7 @@ if query_submitted:
             map_col.subheader("Route Map")
             itinerary_col.subheader("Itinerary Details")
             progress_bar = map_col.progress(0,"Validating your travel plan...")
-            travel_agent = create_travel_agent(keys["open_ai_key"])
+            travel_agent = create_travel_agent(keys[llm_model_keys[llm_model_names.index(st.session_state.llm_model)]], model=select_llm_model)
             itinerary, list_of_places, validation = get_itinerary(travel_agent, input_query)
             st.session_state.input_query = input_query
             st.session_state.itinerary = itinerary
@@ -65,7 +69,7 @@ if query_submitted:
             map_col.error(f"An error occurred: {e}")
 
 def update_itinerary():
-    travel_agent = create_travel_agent(keys["open_ai_key"])
+    travel_agent = create_travel_agent(keys[llm_model_keys[llm_model_names.index(st.session_state.llm_model)]], model=st.session_state.llm_model)
     st.session_state.itinerary = get_updated_itinerary(travel_agent, st.session_state.input_query, json.dumps(st.session_state.list_of_places))
     
     

@@ -1,4 +1,5 @@
 from langchain.chains import LLMChain, SequentialChain
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from Templates.ItineraryTemplate import ItineraryTemplate
 from Templates.MappingTemplate import MappingTemplate
@@ -12,18 +13,23 @@ logging.basicConfig(level=logging.INFO)
 class Agent(object):
     def __init__(
         self,
-        open_ai_api_key,
+        api_key,
         model="gpt-3.5-turbo",
         temperature=0,
         verbose=True,
     ):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-        self._openai_key = open_ai_api_key
-
-        self.chat_model = ChatOpenAI(
-            model=model, temperature=temperature, openai_api_key=self._openai_key
-        )
+        self._llm_api_key = api_key
+        self.model = model
+        if model == "gemini-1.5-pro":
+            self.chat_model = ChatGoogleGenerativeAI(
+                model=self.model, temperature=temperature, google_api_key=self._llm_api_key
+            )
+        else:
+            self.chat_model = ChatOpenAI(
+                model=self.model, temperature=temperature, openai_api_key=self._llm_api_key
+            )
         self.validation_prompt = ValidationTemplate()
         self.itinerary_prompt = ItineraryTemplate()
         self.mapping_prompt = MappingTemplate()
@@ -95,7 +101,7 @@ class Agent(object):
     
     def validate_travel(self, query):
         self.logger.info(
-            "Validating query with {} model".format(self.chat_model.model_name)
+            "Validating query with {} model".format(self.model)
         )
         validation_result = self.validation_chain(
             {
@@ -118,7 +124,7 @@ class Agent(object):
 
     def suggest_travel(self, query):
         self.logger.info(
-            "Validating query with {} model".format(self.chat_model.model_name)
+            "Validating query with {} model".format(self.model)
         )
         validation_result = self.validation_chain(
             {
@@ -139,7 +145,7 @@ class Agent(object):
 
             self.logger.info(
                 "User request is valid, calling agent with {} model".format(
-                    self.chat_model.model_name
+                    self.model
                 )
             )
             try:

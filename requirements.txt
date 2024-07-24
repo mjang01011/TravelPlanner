@@ -19,3 +19,4 @@ streamlit
 streamlit-folium
 streamlit_modal
 uuid
+langchain_google_genai

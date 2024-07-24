@@ -1,7 +1,6 @@
 TODO:
 1) Fix googlemaps search from coords to id
 2) Error handling for API errors
-3) Add more LLM model options (ex. gpt-4, gemini)
 
 # TravelPlanner
 
