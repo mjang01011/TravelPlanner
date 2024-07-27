@@ -1,6 +1,5 @@
 TODO:
-1) Fix googlemaps search from coords to id
-2) Error handling for API errors
+1) Code commenting and clean up logic
 
 # TravelPlanner
 

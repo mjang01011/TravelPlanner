@@ -13,6 +13,7 @@ import openai
 import requests
 import google.generativeai as genai
 
+# Load API keys from the .env file
 def load_keys():
     load_dotenv(find_dotenv(), override=True)
     return {
@@ -22,7 +23,7 @@ def load_keys():
         "mongo_uri": os.environ.get("MONGO_URI")
     }
 
-
+# Validate OpenAI API key
 def validate_openai_api_key(api_key):
     client = openai.OpenAI(api_key=api_key)
     try:
@@ -32,6 +33,7 @@ def validate_openai_api_key(api_key):
     else:
         return True
     
+# Validate Gemini API key
 def validate_gemini_api_key(api_key):
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-1.5-pro")
@@ -42,6 +44,7 @@ def validate_gemini_api_key(api_key):
     else:
         return True
     
+# Validate Google Maps API key by making a request to the geocode endpoint
 def validate_google_maps_key(api_key):
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address=New+York&key={api_key}"
     response = requests.get(url)
@@ -54,6 +57,7 @@ def validate_google_maps_key(api_key):
     else:
         return False
 
+# Validate MongoDB URI
 def validate_mongo_uri(mongo_uri):
     client = MongoClient(mongo_uri, server_api=ServerApi('1'))
     try:
@@ -62,6 +66,7 @@ def validate_mongo_uri(mongo_uri):
         return False
     return client
 
+# Display a spinner while verifying API keys and return validation result
 def verification_spinner():
     with st.spinner('Verifying keys...'):
         keys = load_keys()
@@ -103,39 +108,45 @@ def verification_spinner():
     if (validation_results["openai"] or validation_results["gemini"]) and validation_results["google_maps"] and validation_results["mongo_uri"]:
         return True
     if not validation_results["openai"] and not validation_results["gemini"]:
-        st.warning("You must provide at least one valid API key for either OpenAI or Gemini.")
+        st.warning("You must provide at least one valid API key for either OpenAI or Gemini. Please reload the page after checking your API key.")
     if not validation_results["google_maps"]:
-        st.warning("You must provide a valid API key for Google Maps.")
+        st.warning("You must provide a valid API key for Google Maps. Please reload the page after checking your API key.")
     if not validation_results["mongo_uri"]:
-        st.warning("You must provide a valid key for mongo_uri.")
+        st.warning("You must provide a valid key for mongo_uri. Please reload the page after checking your API key.")
     return False
 
+# Connect to MongoDB
 def connect_db():
     client = validate_mongo_uri(load_keys()["mongo_uri"])
     db = client["TravelPlanner"]
     users_collection = db["users"]
     return users_collection
 
+# Display a modal with a message
 def display_message(title, message):
     modal = Modal(key=title, title=title)
     with modal.container():
         st.text(message)
     return modal
 
+# Create a Agent with the specified API key and model
 def create_travel_agent(api_key, model="gpt-3.5-turbo"):
     return Agent(api_key=api_key, model=model)
 
+# Increment a progress bar
 def increment_progress_bar(progress_bar, prev, final, text):
     for i in range(prev, final):
         progress_bar.progress(i, text)
         time.sleep(0.01)
 
+# Decode the route from the Google Maps directions result
 def decode_route(directions_result):
     if not directions_result or not directions_result[0].get("overview_polyline"):
         return None
     overall_route = decode_polyline(directions_result[0]["overview_polyline"]["points"])
     return [(float(p["lat"]), float(p["lng"])) for p in overall_route]
 
+# Create a folium map with the specified route and marker points
 def create_map(route_coords, marker_points, map_start_loc):
     map = folium.Map(location=map_start_loc, tiles="openstreetmap", zoom_start=9)
 
@@ -159,6 +170,7 @@ def create_map(route_coords, marker_points, map_start_loc):
     
     return map
 
+# Update the folium map with the specified list of places
 def update_map(list_of_places, google_maps_key):
     router = Router(google_maps_key=google_maps_key)
     directions_result, marker_points = router.make_markers(list_of_places)

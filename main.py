@@ -8,35 +8,49 @@ import uuid
 from bson.binary import Binary
 import json
 
-
+# Streamlit page configuration
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 title, login = st.columns([0.9, 0.1])
 title.title("Travel Planner")
-validation_result = verification_spinner()
-if not validation_result:
-    time.sleep(9999)
+
+# Verify API keys
+if 'key_validated' not in st.session_state:
+    validation_result = verification_spinner()
+    if not validation_result:
+        st.stop()
+    st.session_state.key_validated = True
+
+# Load API keys
 keys = load_keys()
-    
+
+# Initialize session state for authentication
 if 'auth' not in st.session_state:
     st.session_state.auth = False
-if not st.session_state.auth:
-    if login.button("Login"):
-        st.switch_page("pages/login.py")
-else:
-    if login.button("Logout"):
-        st.session_state.auth = False
-        st.rerun()
-    if st.button("View your past plans!"):
-        st.switch_page("pages/past_records.py")
+
+# Login/logout redirect
+if not st.session_state.auth and login.button("Login"):
+    st.switch_page("pages/login.py")
+if st.session_state.auth and login.button("Logout"):
+    st.session_state.auth = False
+    st.rerun()
+if st.session_state.auth and st.button("View your past plans!"):
+    st.switch_page("pages/past_records.py")
+
+# Form for travel plan input
 with st.form("travel_form"):
     input_query = st.text_input("Type your travel plan:")
     query_submitted = st.form_submit_button("Submit")
-select_llm_model = st.radio("Choose language model:", ["gpt-3.5-turbo", "gemini-1.5-pro"])
-st.session_state.llm_model = select_llm_model
-llm_model_names = ["gpt-3.5-turbo", "gemini-1.5-pro"]
-llm_model_keys = ["open_ai_key", "google_gemini_key"]
-map_col, itinerary_col, update_buttons = st.columns([0.45,0.45,0.1], gap="small")
 
+# Select language model
+select_llm_model = st.radio("Choose language model:", ["gpt-3.5-turbo", "gpt-4", "gemini-1.5-pro"])
+st.session_state.llm_model = select_llm_model
+llm_model_names = ["gpt-3.5-turbo", "gpt-4", "gemini-1.5-pro"]
+llm_model_keys = ["open_ai_key", "open_ai_key", "google_gemini_key"]
+
+# Column layout for map, itinerary, and update buttons
+map_col, itinerary_col, update_buttons = st.columns([0.45, 0.45, 0.1], gap="small")
+
+# Handle form query submission
 if query_submitted:
     if input_query == "":
         st.warning("Please enter your travel plan.")
@@ -45,41 +59,53 @@ if query_submitted:
             map_col.empty()
             map_col.subheader("Route Map")
             itinerary_col.subheader("Itinerary Details")
-            progress_bar = map_col.progress(0,"Validating your travel plan...")
+
+            # Display progress bar for validation
+            progress_bar = map_col.progress(0, "Validating your travel plan...")
             travel_agent = create_travel_agent(keys[llm_model_keys[llm_model_names.index(st.session_state.llm_model)]], model=select_llm_model)
             itinerary, list_of_places, validation = travel_agent.suggest_travel(input_query)
+            if itinerary == None and list_of_places == None:
+                progress_bar.empty()
+                map_col.markdown(validation)
+                st.stop()
+            # Store data in session state
             st.session_state.input_query = input_query
             st.session_state.itinerary = itinerary
             st.session_state.list_of_places = list_of_places
             st.session_state.initial_list_of_places = list_of_places.copy()
             st.session_state.validation = validation
+
             if validation:
                 increment_progress_bar(progress_bar, 0, 30, '\nRoute map is loading...')
                 router = Router(google_maps_key=keys["google_maps_key"])
                 directions_result, marker_points = router.make_markers(list_of_places)
                 increment_progress_bar(progress_bar, 30, 70, '\nRoute map is loading...')
                 route_coords = decode_route(directions_result)
-                if route_coords == None:
-                    st.warning("Error has occured with google maps API. Please try again.")
+                if route_coords is None:
+                    st.warning("Error has occurred with Google Maps API. Please try again.")
                 map_start_loc = [route_coords[0][0], route_coords[0][1]]
                 increment_progress_bar(progress_bar, 70, 100, '\nRoute map is loading...')
                 time.sleep(0.5)
                 progress_bar.empty()
             else:
                 progress_bar.empty()
-                map_col.text("Error has occured with google maps api and wasn't able to generate a map.")
+                map_col.text("Error has occurred with Google Maps API and wasn't able to generate a map.")
         
         except Exception as e:
             map_col.error(f"An error occurred: {e}")
+            st.stop()
 
+# Update the itinerary
 def update_itinerary():
     travel_agent = create_travel_agent(keys[llm_model_keys[llm_model_names.index(st.session_state.llm_model)]], model=st.session_state.llm_model)
     st.session_state.itinerary = travel_agent.update_itinerary(st.session_state.input_query, json.dumps(st.session_state.list_of_places))
-    
-if 'initial_list_of_places' in st.session_state:        
+
+# Display and handle itinerary and map updates
+if 'initial_list_of_places' in st.session_state:
     suggestions = []
     update_itinerary_button = update_buttons.button("Update Itinerary", on_click=update_itinerary)
     add_to_past_records_button = update_buttons.button("Add to past records")
+
     with itinerary_col:
         itinerary_text = itinerary_col.text(st.session_state.itinerary)
         st.text("Currently suggested places to visit:")
@@ -89,6 +115,7 @@ if 'initial_list_of_places' in st.session_state:
         st.text("Extra places you may want to consider:")
         for i, place in enumerate(st.session_state.initial_list_of_places['extra_stops']):
             suggestions.append(st.checkbox(place, value=False))
+
         new_stops = []
         new_extra_stops = []
         for stop, keep in zip(st.session_state.initial_list_of_places['stops'] + st.session_state.initial_list_of_places['extra_stops'], suggestions):
@@ -96,10 +123,13 @@ if 'initial_list_of_places' in st.session_state:
                 new_stops.append(stop)
             else:
                 new_extra_stops.append(stop)
+
         st.session_state.list_of_places['stops'] = new_stops
         st.session_state.list_of_places['extra_stops'] = new_extra_stops
+
         with map_col:
             st_folium(update_map(st.session_state.list_of_places, keys["google_maps_key"]), width="100%", returned_objects=[], key="map_folium_updated")
+
     if add_to_past_records_button:
         if not st.session_state.auth:
             update_buttons.warning("You are not logged in. Please log in to add your travel plan.")
@@ -122,4 +152,3 @@ if 'initial_list_of_places' in st.session_state:
                 display_message("Success!", "Your travel plan has been added.")
             else:
                 display_message("Failed!", "An error occurred with adding your travel plan. Please try again.")
-        
