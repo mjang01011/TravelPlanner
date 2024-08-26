@@ -39,6 +39,13 @@ TravelPlanner is a travel itinerary suggestion application designed to leverage 
     MONGO_URI=your_mongo_uri
     ```
 
+2. **Populate Database**
+    - In order to use some features of the application (ex. login, logging history) you should run the populate_db.py file after setting up your `.env` file. This creates a user with `"username": "user", "password": "asd123"` which includes two itinerary histories.
+
+    ```bash
+    python populate_db.py
+    ```
+
 ## Usage
 
 1. **Run the application:**
